@@ -10,7 +10,7 @@
 
     document.querySelector('#addDirectory').addEventListener('submit', async e => {
       e.preventDefault();
-      const { directoryName } = getFormData(e.target);
+      const directoryName = e.target[0].value
       newDirectory = await root.getDirectoryHandle(directoryName, { "create" : true });
       document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
     });
