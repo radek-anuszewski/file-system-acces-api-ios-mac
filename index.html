@@ -9,6 +9,7 @@
     const getFormData = form => Object.fromEntries(new FormData(form).entries());
 
     document.querySelector('#addDirectory').addEventListener('submit', async e => {
+      e.preventDefault();
       const { directoryName } = getFormData(e.target);
       newDirectory = await root.getDirectoryHandle(directoryName, { "create" : true });
       document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
