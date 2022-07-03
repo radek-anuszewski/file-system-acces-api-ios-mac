@@ -11,7 +11,7 @@
       let str = '';
       for await (const handle of root.values()) {
         if (handle.kind === 'directory') {
-          str += handle.name;
+          str += `<br>${handle.name}`;
           let hasFile = false
           for await (const file of handle.values()) {
             if (file.kind === 'file') {
@@ -22,7 +22,7 @@
               str += `${file.name},`;
             }
           }
-          str = `${hasFile ? str.slice(0, -1) : str}. `;
+          str = `${hasFile ? str.slice(0, -1) : str} `;
         }
       }
       document.querySelector('#dirsAndFiles').innerHTML = str;
@@ -46,10 +46,11 @@
         e.preventDefault();
         const fileName = e.target[0].value;
         const fileContent = e.target[0].value;
-        const fileHandle = await root.getFileHandle(`${fileName}.txt`, { "create" : true });
-        const fileAccessHandle = await fileHandle.createSyncAccessHandle();
-        const data = new TextEncoder().encode(fileContent);
-        await fileAccessHandle.write(data, { at: 0 });
+        const directoryHandle = await root.getDirectoryHandle(directoryName);
+        const fileHandle = await directoryHandle.getFileHandle(`${fileName}.txt`, { "create" : true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(fileContent);
+        await writable.close();
         await updateDirsAndFiles();
       }
       catch (e) {
