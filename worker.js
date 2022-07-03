@@ -6,5 +6,5 @@ self.addEventListener('message', async e => {
     const fileAccessHandle = await fileHandle.createSyncAccessHandle();
     const data = new TextEncoder().encode(fileContent);
     await fileAccessHandle.write(data, { at: 0 });
-    self.postMessage('written');
+    self.postMessage({ fileName });
 });

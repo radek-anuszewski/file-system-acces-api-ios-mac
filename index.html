@@ -48,7 +48,7 @@
         e.preventDefault();
         directoryName = e.target[0].value;
         await root.getDirectoryHandle(directoryName, { "create" : true });
-        document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
+        document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} has been created!`;
         await updateDirsAndFiles();
       }
       catch (e) {
@@ -57,7 +57,9 @@
     });
 
     const worker = new Worker('./worker.js');
-    worker.addEventListener('message', async () => {
+    worker.addEventListener('message', async e => {
+      const fileName = e.data.fileName;
+      document.querySelector('#createdFile').innerHTML = `File ${fileName} has been created`;
       await updateDirsAndFiles();
     });
 
