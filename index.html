@@ -41,17 +41,17 @@
       }
     });
 
+    const worker = new Worker('/worker.js');
+    worker.addEventListener('message', async () => {
+      await updateDirsAndFiles();
+    })
+
     document.querySelector('#saveFile').addEventListener('submit', async e => {
       try {
         e.preventDefault();
         const fileName = e.target[0].value;
-        const fileContent = e.target[0].value;
-        const directoryHandle = await root.getDirectoryHandle(directoryName);
-        const fileHandle = await directoryHandle.getFileHandle(`${fileName}.txt`, { "create" : true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(fileContent);
-        await writable.close();
-        await updateDirsAndFiles();
+        const fileContent = e.target[1].value;
+        worker.postMessage({ fileName, fileContent, directoryName });
       }
       catch (e) {
         alert(e)
