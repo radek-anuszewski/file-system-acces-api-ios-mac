@@ -6,15 +6,48 @@
   <title>File System Access API demo for iOS/Mac</title>
   <script type="module">
     const root = await navigator.storage.getDirectory();
-    let newDirectory;
-    const getFormData = form => Object.fromEntries(new FormData(form).entries());
+    let directoryName;
+    const updateDirsAndFiles = async () => {
+      let str = '';
+      for await (const handle of root.values()) {
+        if (handle.kind === 'directory') {
+          str += handle.name;
+          let hasFile = false
+          for await (const file of handle.values()) {
+            if (file.kind === 'file') {
+              if (!hasFile) {
+                str += ', files: '
+              }
+              hasFile = true;
+              str += `${file.name},`;
+            }
+          }
+          str = `${hasFile ? str.slice(0, -1) : str}. `;
+        }
+      }
+      document.querySelector('#dirsAndFiles').innerHTML = str;
+    };
 
     document.querySelector('#addDirectory').addEventListener('submit', async e => {
       e.preventDefault();
-      const directoryName = e.target[0].value
-      newDirectory = await root.getDirectoryHandle(directoryName, { "create" : true });
+      directoryName = e.target[0].value;
+      await root.getDirectoryHandle(directoryName, { "create" : true });
       document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
+      await updateDirsAndFiles();
     });
+
+    document.querySelector('#saveFile').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fileName = e.target[0].value;
+      const fileContent = e.target[0].value;
+      const fileHandle = await root.getFileHandle(`${fileName}.txt`, { "create" : true });
+      const fileAccessHandle = await fileHandle.createSyncAccessHandle();
+      const data = new TextEncoder().encode(fileContent);
+      await fileAccessHandle.write(data, { at: 0 });
+      await updateDirsAndFiles();
+    });
+
+    await updateDirsAndFiles();
   </script>
 </head>
 <body>
@@ -29,7 +62,7 @@
   </div>
 </header>
 <main>
-<article>
+<section>
   <h2>Add directory</h2>
   <form id="addDirectory">
     <label for="directoryName">Directory name</label>
@@ -37,8 +70,31 @@
     <br>
     <button type="submit">add directory</button>
   </form>
-  <output id="createdDirectory"></output>
-</article>
+  <output for="directoryName" id="createdDirectory"></output>
+</section>
 </main>
+<section>
+  <h2>Save file in that directory</h2>
+  <form id="saveFile">
+    <label for="fileName">File name</label>
+    <input type="text" id="fileName">
+    <br>
+    <label for="fileContent">File content</label>
+    <textarea id="fileContent"></textarea>
+    <button type="submit">Save file</button>
+  </form>
+  <output for="fileName" id="createdFile"></output>
+</section>
+<section>
+  <h2>Currently created dirs and files in them</h2>
+  <output for="directoryName fileName" id="dirsAndFiles"></output>
+</section>
+</main>
+<footer>
+  <address>
+    Repository:
+    <a href="https://github.com/radek-anuszewski/file-system-acces-api-ios-mac">File system acess API iOS / Mac</a>
+  </address>
+</footer>
 </body>
 </html>
