@@ -4,22 +4,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta charset="UTF-8">
   <title>File System Access API demo for iOS/Mac</title>
+  <style>
+    dialog {
+      padding: 48px;
+    }
+
+    dialog::backdrop {
+      background: rgba(255,0,0,.25);
+    }
+  </style>
   <script type="module">
     const root = await navigator.storage.getDirectory();
     let directoryName;
+    const dialog = document.querySelector('dialog');
     const updateDirsAndFiles = async () => {
       let str = '';
       for await (const handle of root.values()) {
         if (handle.kind === 'directory') {
           str += `<br>${handle.name}`;
-          let hasFile = false
+          let hasFile = false;
           for await (const file of handle.values()) {
             if (file.kind === 'file') {
               if (!hasFile) {
-                str += ', files: '
+                str += ', files: ';
               }
               hasFile = true;
-              str += `${file.name},`;
+              const fileData = JSON.stringify({
+                directoryName: handle.name,
+                fileName: file.name,
+              });
+              const preparedFileData = fileData.replaceAll('"', '\'');
+              str += `<button data-filedata="${preparedFileData}">${file.name}</button>,`;
             }
           }
           str = `${hasFile ? str.slice(0, -1) : str} `;
@@ -42,19 +57,43 @@
     });
 
     const worker = new Worker('./worker.js');
-    worker.addEventListener('message', async () => {
-      await updateDirsAndFiles();
-    })
+    worker.addEventListener('message', async e => {
+      const type = e.data.type;
+      if (type === 'written') {
+        await updateDirsAndFiles();
+      }
+      if (type === 'read') {
+
+      }
+    });
+
+    document.querySelector('#dirsAndFiles').addEventListener('click', async e => {
+      const data = e.target.dataset.filedata;
+      const { fileName, directoryName } = JSON.parse(data.replaceAll('\'', '"'));
+      const dirHandle = await root.getDirectoryHandle(directoryName)
+      const fileHandle = await dirHandle.getFileHandle(fileName);
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      document.querySelector('#readFile').innerHTML = `
+       <section>
+        <h3>${fileName}</h3>
+        <p>${text}</p>
+      </section>
+      `;
+      dialog.showModal();
+    });
+
+    document.querySelector('#closeDialog').addEventListener('click', () => dialog.close())
 
     document.querySelector('#saveFile').addEventListener('submit', async e => {
       try {
         e.preventDefault();
         const fileName = e.target[0].value;
         const fileContent = e.target[1].value;
-        worker.postMessage({ fileName, fileContent, directoryName });
+        worker.postMessage({ type: 'write', fileName, fileContent, directoryName });
       }
       catch (e) {
-        alert(e)
+        alert(e);
       }
     });
 
@@ -99,6 +138,11 @@
   <h2>Currently created dirs and files in them</h2>
   <output for="directoryName fileName" id="dirsAndFiles"></output>
 </section>
+<dialog id="dialog">
+  <section id="readFile">
+  </section>
+  <button id="closeDialog">Close dialog</button>
+</dialog>
 </main>
 <footer>
   <address>
