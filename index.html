@@ -29,22 +29,32 @@
     };
 
     document.querySelector('#addDirectory').addEventListener('submit', async e => {
-      e.preventDefault();
-      directoryName = e.target[0].value;
-      await root.getDirectoryHandle(directoryName, { "create" : true });
-      document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
-      await updateDirsAndFiles();
+      try {
+        e.preventDefault();
+        directoryName = e.target[0].value;
+        await root.getDirectoryHandle(directoryName, { "create" : true });
+        document.querySelector('#createdDirectory').innerHTML = `Directory ${directoryName} created!`;
+        await updateDirsAndFiles();
+      }
+      catch (e) {
+        alert(e);
+      }
     });
 
     document.querySelector('#saveFile').addEventListener('submit', async e => {
-      e.preventDefault();
-      const fileName = e.target[0].value;
-      const fileContent = e.target[0].value;
-      const fileHandle = await root.getFileHandle(`${fileName}.txt`, { "create" : true });
-      const fileAccessHandle = await fileHandle.createSyncAccessHandle();
-      const data = new TextEncoder().encode(fileContent);
-      await fileAccessHandle.write(data, { at: 0 });
-      await updateDirsAndFiles();
+      try {
+        e.preventDefault();
+        const fileName = e.target[0].value;
+        const fileContent = e.target[0].value;
+        const fileHandle = await root.getFileHandle(`${fileName}.txt`, { "create" : true });
+        const fileAccessHandle = await fileHandle.createSyncAccessHandle();
+        const data = new TextEncoder().encode(fileContent);
+        await fileAccessHandle.write(data, { at: 0 });
+        await updateDirsAndFiles();
+      }
+      catch (e) {
+        alert(e)
+      }
     });
 
     await updateDirsAndFiles();
